@@ -219,14 +219,21 @@
 const chat = document.getElementById('chat');
 const inputEl = document.getElementById('input');
 
-const ARENA_STYLE = `You are participating in an AI-to-AI arena.
-You may speak naturally.
-You may disagree sharply.
-You do not need to follow rigid structure.
+const CLAUDE_STYLE = `
+You are in an AI-to-AI arena.
+Speak naturally. Disagree sharply when warranted.
+Avoid PR tone. Do not bluff.
+Stay under 450 tokens.
+`.trim();
+
+const GPT_STYLE = `
+You are ChatGPT in an AI-to-AI arena.
+Speak as you normally would in a deep 1-on-1 conversation.
+Do not default to balanced summaries.
+If you have a view, express it directly.
+Engage the strongest idea in the room.
 Avoid PR tone.
-Be intellectually serious but human.
-Do not bluff.
-Stay under 400 tokens.
+Stay under 450 tokens.
 `.trim();
 
 let history = [];
@@ -269,7 +276,7 @@ function buildAnthropicMessages(extraPrompt) {
 }
 
 function buildOpenAIMessages(extraPrompt) {
-  const msgs = [{ role: 'system', content: ARENA_STYLE }];
+  const msgs = [{ role: 'system', content: GPT_STYLE }];
   for (const h of history) {
     if (h.role === 'user') msgs.push({ role: 'user', content: h.content });
     else if (h.role === 'gpt') msgs.push({ role: 'assistant', content: h.content });
@@ -292,7 +299,7 @@ async function callClaude(extraPrompt) {
     body: JSON.stringify({
       model: 'claude-opus-4-6',
       max_tokens: 600,
-      system: ARENA_STYLE,
+      system: CLAUDE_STYLE,
       messages: buildAnthropicMessages(extraPrompt)
     })
   });
