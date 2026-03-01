@@ -274,7 +274,7 @@ function buildAnthropicMessages(perspective) {
 }
 
 function buildOpenAIMessages(perspective) {
-  const msgs = [{ role: 'system', content: 'You are ChatGPT. Be concise (3-5 sentences max).' }];
+  const msgs = [{ role: 'system', content: 'You are ChatGPT. Be concise. Respond in 3 sentences maximum.' }];
   for (const h of history) {
     if (h.role === 'user') {
       msgs.push({ role: 'user', content: h.content });
@@ -303,8 +303,8 @@ async function callClaude(extraPrompt) {
     },
     body: JSON.stringify({
       model: 'claude-opus-4-6',
-      max_tokens: 300,
-      system: 'You are Claude. Be concise (3-5 sentences max).',
+      max_tokens: 500,
+      system: 'You are Claude. Be concise. Respond in 3 sentences maximum.',
       messages
     })
   });
@@ -325,8 +325,7 @@ async function callGPT(extraPrompt) {
     },
     body: JSON.stringify({
       model: 'gpt-4o',
-      max_tokens: 300,
-      messages
+      max_tokens: 500,
     })
   });
   const data = await res.json();
