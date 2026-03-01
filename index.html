@@ -294,7 +294,7 @@ async function callClaude(extraPrompt) {
   const key = getAnthropicKey();
   if (!key) { alert('Please enter your Anthropic API key.'); return null; }
   const messages = buildAnthropicMessages(extraPrompt);
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('https://anthropic-proxy.dcl-maltz.workers.dev/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
