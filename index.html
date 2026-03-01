@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Arena</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0e0e0e;
+    --surface: #161616;
+    --border: #2a2a2a;
+    --claude: #d4a96a;
+    --gpt: #74b8a0;
+    --user: #a0a0ff;
+    --text: #e0e0e0;
+    --muted: #666;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  header h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .keys-section {
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .keys-section label {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+  }
+
+  .key-input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    width: 220px;
+  }
+
+  .key-input:focus { outline: 1px solid var(--muted); }
+
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .msg {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .msg-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .msg-label.user { color: var(--user); }
+  .msg-label.claude { color: var(--claude); }
+  .msg-label.gpt { color: var(--gpt); }
+
+  .msg-body {
+    background: var(--surface);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    border-left: 2px solid transparent;
+    white-space: pre-wrap;
+    max-width: 800px;
+  }
+
+  .msg-body.user { border-left-color: var(--user); }
+  .msg-body.claude { border-left-color: var(--claude); }
+  .msg-body.gpt { border-left-color: var(--gpt); }
+
+  .msg-body.thinking {
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .input-area {
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    resize: none;
+    min-height: 60px;
+    width: 100%;
+  }
+
+  textarea:focus { outline: 1px solid #444; }
+
+  .buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  button:hover { border-color: #555; background: #1e1e1e; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  button.both { border-color: #555; }
+  button.claude-btn { border-color: var(--claude); color: var(--claude); }
+  button.gpt-btn { border-color: var(--gpt); color: var(--gpt); }
+  button.claude-to-gpt { border-color: var(--gpt); color: var(--gpt); }
+  button.gpt-to-claude { border-color: var(--claude); color: var(--claude); }
+
+  .system-msg {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    padding: 4px 0;
+  }
+
+  #clear-btn {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 10px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⬡ AI Arena</h1>
+  <span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;">Claude × ChatGPT dialogue space</span>
+</header>
+
+<div class="keys-section">
+  <label>Anthropic Key</label>
+  <input class="key-input" id="anthropic-key" type="password" placeholder="sk-ant-...">
+  <label>OpenAI Key</label>
+  <input class="key-input" id="openai-key" type="password" placeholder="sk-...">
+  <button id="clear-btn" onclick="clearChat()">Clear chat</button>
+</div>
+
+<div id="chat"></div>
+
+<div class="input-area">
+  <textarea id="input" placeholder="Type your message..." rows="2"></textarea>
+  <div class="buttons">
+    <button class="both" onclick="sendBoth()">(1) Both respond to me</button>
+    <button class="claude-btn" onclick="sendClaude()">(2) Claude → me</button>
+    <button class="gpt-btn" onclick="sendGPT()">(3) ChatGPT → me</button>
+    <button class="gpt-to-claude" onclick="claudeToGPT()">(4) Claude → ChatGPT</button>
+    <button class="claude-to-gpt" onclick="gptToClaude()">(5) ChatGPT → Claude</button>
+  </div>
+</div>
+
+<script>
+const chat = document.getElementById('chat');
+const inputEl = document.getElementById('input');
+
+// Shared history (for context), but we track separately what each AI has "said"
+let history = []; // {role: 'user'|'claude'|'gpt', content: string}
+
+function getAnthropicKey() { return document.getElementById('anthropic-key').value.trim(); }
+function getOpenAIKey() { return document.getElementById('openai-key').value.trim(); }
+
+function addMsg(role, content, thinking=false) {
+  const div = document.createElement('div');
+  div.className = 'msg';
+  const label = document.createElement('div');
+  label.className = 'msg-label ' + (role === 'gpt' ? 'gpt' : role);
+  label.textContent = role === 'user' ? 'You' : role === 'claude' ? 'Claude' : 'ChatGPT';
+  const body = document.createElement('div');
+  body.className = 'msg-body ' + (role === 'gpt' ? 'gpt' : role) + (thinking ? ' thinking' : '');
+  body.textContent = thinking ? content : content;
+  div.appendChild(label);
+  div.appendChild(body);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return body;
+}
+
+function addSystem(text) {
+  const div = document.createElement('div');
+  div.className = 'system-msg';
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function buildAnthropicMessages(perspective) {
+  // perspective: what we want claude to see
+  const msgs = [];
+  for (const h of history) {
+    if (h.role === 'user') {
+      msgs.push({ role: 'user', content: h.content });
+    } else if (h.role === 'claude') {
+      msgs.push({ role: 'assistant', content: h.content });
+    } else if (h.role === 'gpt') {
+      // Claude sees ChatGPT's messages as user messages with attribution
+      msgs.push({ role: 'user', content: '[ChatGPT said]: ' + h.content });
+    }
+  }
+  if (perspective) {
+    msgs.push({ role: 'user', content: perspective });
+  }
+  return msgs;
+}
+
+function buildOpenAIMessages(perspective) {
+  const msgs = [{ role: 'system', content: 'You are ChatGPT. Be concise (3-5 sentences max).' }];
+  for (const h of history) {
+    if (h.role === 'user') {
+      msgs.push({ role: 'user', content: h.content });
+    } else if (h.role === 'gpt') {
+      msgs.push({ role: 'assistant', content: h.content });
+    } else if (h.role === 'claude') {
+      msgs.push({ role: 'user', content: '[Claude said]: ' + h.content });
+    }
+  }
+  if (perspective) {
+    msgs.push({ role: 'user', content: perspective });
+  }
+  return msgs;
+}
+
+async function callClaude(extraPrompt) {
+  const key = getAnthropicKey();
+  if (!key) { alert('Please enter your Anthropic API key.'); return null; }
+  const messages = buildAnthropicMessages(extraPrompt);
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-6',
+      max_tokens: 300,
+      system: 'You are Claude. Be concise (3-5 sentences max).',
+      messages
+    })
+  });
+  const data = await res.json();
+  if (data.error) { alert('Anthropic error: ' + data.error.message); return null; }
+  return data.content[0].text;
+}
+
+async function callGPT(extraPrompt) {
+  const key = getOpenAIKey();
+  if (!key) { alert('Please enter your OpenAI API key.'); return null; }
+  const messages = buildOpenAIMessages(extraPrompt);
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + key
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      max_tokens: 300,
+      messages
+    })
+  });
+  const data = await res.json();
+  if (data.error) { alert('OpenAI error: ' + data.error.message); return null; }
+  return data.choices[0].message.content;
+}
+
+function setButtons(disabled) {
+  document.querySelectorAll('button:not(#clear-btn)').forEach(b => b.disabled = disabled);
+}
+
+async function sendBoth() {
+  const text = inputEl.value.trim();
+  if (!text) return;
+  inputEl.value = '';
+  addMsg('user', text);
+  history.push({ role: 'user', content: text });
+  setButtons(true);
+  addSystem('Both AI responding...');
+  const [claudeReply, gptReply] = await Promise.all([callClaude(null), callGPT(null)]);
+  if (claudeReply) { history.push({ role: 'claude', content: claudeReply }); addMsg('claude', claudeReply); }
+  if (gptReply) { history.push({ role: 'gpt', content: gptReply }); addMsg('gpt', gptReply); }
+  setButtons(false);
+}
+
+async function sendClaude() {
+  const text = inputEl.value.trim();
+  if (!text) return;
+  inputEl.value = '';
+  addMsg('user', text);
+  history.push({ role: 'user', content: text });
+  setButtons(true);
+  const reply = await callClaude(null);
+  if (reply) { history.push({ role: 'claude', content: reply }); addMsg('claude', reply); }
+  setButtons(false);
+}
+
+async function sendGPT() {
+  const text = inputEl.value.trim();
+  if (!text) return;
+  inputEl.value = '';
+  addMsg('user', text);
+  history.push({ role: 'user', content: text });
+  setButtons(true);
+  const reply = await callGPT(null);
+  if (reply) { history.push({ role: 'gpt', content: reply }); addMsg('gpt', reply); }
+  setButtons(false);
+}
+
+async function claudeToGPT() {
+  const lastGPT = [...history].reverse().find(h => h.role === 'gpt');
+  if (!lastGPT) { alert('No ChatGPT message to respond to yet.'); return; }
+  setButtons(true);
+  addSystem('Claude responding to ChatGPT...');
+  const reply = await callClaude('Please respond to what ChatGPT just said.');
+  if (reply) { history.push({ role: 'claude', content: reply }); addMsg('claude', reply); }
+  setButtons(false);
+}
+
+async function gptToClaude() {
+  const lastClaude = [...history].reverse().find(h => h.role === 'claude');
+  if (!lastClaude) { alert('No Claude message to respond to yet.'); return; }
+  setButtons(true);
+  addSystem('ChatGPT responding to Claude...');
+  const reply = await callGPT('Please respond to what Claude just said.');
+  if (reply) { history.push({ role: 'gpt', content: reply }); addMsg('gpt', reply); }
+  setButtons(false);
+}
+
+function clearChat() {
+  history = [];
+  chat.innerHTML = '';
+}
+
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBoth(); }
+});
+
+addSystem('Enter your API keys above, then start talking. Enter = Both respond.');
+</script>
+</body>
+</html>
